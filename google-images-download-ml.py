@@ -38,7 +38,7 @@ search_keyword = [str(item) for item in args.keywords.split(',')]
 
 # cannot download more than 100 images per keyword search
 LIMIT = 100
-train_valid_ratio = 5     # change this as you need
+train_valid_ratio = 5     # change this as you need (here 5 means 20%)
 download_count = LIMIT
 if args.limit and  int(args.limit) < LIMIT:
     download_count = int(args.limit)
