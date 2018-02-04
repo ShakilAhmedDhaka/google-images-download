@@ -25,6 +25,7 @@ import sys  # Importing the System Library
 import os
 import argparse
 import ssl
+import imghdr
 
 # Taking command line arguments from users
 parser = argparse.ArgumentParser()
@@ -183,35 +184,52 @@ while i < len(search_keyword):
 
     ## To save imges to the same directory
     # IN this saving process we are just skipping the URL if there is any error
+    total_try = 0
     k = 0
     validation_count = download_count/3  # validation set hae 1/3 of train set
     downloaded = download_count
     while (k < LIMIT and downloaded > 0):
         try:
-            req = Request(items[k], headers={
+            req = Request(items[total_try], headers={
                 "User-Agent": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.27 Safari/537.17"})
             response = urlopen(req, None, 15)
-            image_name = str(items[k][(items[k].rfind('/'))+1:])
+            image_name = str(items[total_try][(items[total_try].rfind('/'))+1:])
             if '?' in image_name:
                 image_name = image_name[:image_name.find('?')]
 
             output_file_name =  search_keyword[i].lower()+"."+str(downloaded)
             if ".jpg" in image_name:
                 output_file_name = output_file_name + ".jpg"
-            elif ".png" in image_name:
-                output_file_name = output_file_name + ".png"
-            elif ".jpeg" in image_name:
-                output_file_name = output_file_name + ".jpeg"
-            elif ".svg" in image_name:
-                output_file_name = output_file_name + ".svg"
+            # elif ".png" in image_name:
+            #     output_file_name = output_file_name + ".png"
+            # elif ".jpeg" in image_name:
+            #     output_file_name = output_file_name + ".jpeg"
+            # elif ".svg" in image_name:
+            #     output_file_name = output_file_name + ".svg"
+            # else:
+            #     output_file_name = output_file_name + ".jpg"
+            #     image_name = image_name + ".jpg"
             else:
-                output_file_name = output_file_name + ".jpg"
-                image_name = image_name + ".jpg"
+                print("not jpg: "+image_name)
+                print("total try: "+ str(total_try))
+                total_try = total_try + 1
+                continue
 
             output_file = open(train_item_dir+"/"+output_file_name, 'wb')
             data = response.read()
             output_file.write(data)
             output_file.close()
+
+            if imghdr.what(train_item_dir+"/"+output_file_name) == 'jpeg' or imghdr.what(train_item_dir+"/"+output_file_name) == 'jpg':
+                print("OK")
+            else:
+                print("NOT jpg: "+image_name)
+                os.remove(train_item_dir+"/"+output_file_name)
+                print("total try: "+ str(total_try))
+                total_try = total_try + 1
+                continue
+
+
 
             if k%3 == 0 and validation_count > 0:
                 output_file_valid = open(valid_item_dir+"/"+output_file_name, 'wb')
@@ -220,10 +238,12 @@ while i < len(search_keyword):
                 validation_count = validation_count - 1
             response.close()
 
-            print("completed ====> " + str(k + 1) + ". " + image_name)
+            print("completed ====> " + output_file_name)
 
             k = k + 1
             downloaded = downloaded - 1
+            total_try = total_try + 1
+
 
         except IOError:  # If there is any IOError
 
@@ -231,6 +251,7 @@ while i < len(search_keyword):
             print("IOError on image " + str(k + 1))
             k = k + 1
             downloaded = downloaded + 1
+            total_try = total_try + 1
 
         except HTTPError as e:  # If there is any HTTPError
 
@@ -238,6 +259,7 @@ while i < len(search_keyword):
             print("HTTPError" + str(k))
             k = k + 1
             downloaded = downloaded + 1
+            total_try = total_try + 1
 
         except URLError as e:
 
@@ -245,6 +267,7 @@ while i < len(search_keyword):
             print("URLError " + str(k))
             k = k + 1
             downloaded = downloaded + 1
+            total_try = total_try + 1
 
         except ssl.CertificateError as e:
 
@@ -252,6 +275,7 @@ while i < len(search_keyword):
             print("CertificateError " + str(k))
             k = k + 1
             downloaded = downloaded + 1
+            total_try = total_try + 1
 
 
 
