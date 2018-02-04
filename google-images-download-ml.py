@@ -38,6 +38,7 @@ search_keyword = [str(item) for item in args.keywords.split(',')]
 
 # cannot download more than 100 images per keyword search
 LIMIT = 100
+train_valid_ratio = 5     # change this as you need
 download_count = LIMIT
 if args.limit and  int(args.limit) < LIMIT:
     download_count = int(args.limit)
@@ -142,7 +143,6 @@ except OSError as e:
 errorCount = 0
 i = 0
 
-
 while i < len(search_keyword):
     items = []
     iteration = "\n" + "Item no.: " + str(i + 1) + " -->" + " Item name = " + str(search_keyword[i])
@@ -186,8 +186,8 @@ while i < len(search_keyword):
     # IN this saving process we are just skipping the URL if there is any error
     total_try = 0
     k = 0
-    validation_count = download_count/3  # validation set hae 1/3 of train set
     downloaded = download_count
+    validation_count = download_count/train_valid_ratio  # validation set hae 1/3 of train set
     while (k < LIMIT and downloaded > 0):
         try:
             req = Request(items[total_try], headers={
@@ -215,27 +215,44 @@ while i < len(search_keyword):
                 total_try = total_try + 1
                 continue
 
-            output_file = open(train_item_dir+"/"+output_file_name, 'wb')
             data = response.read()
-            output_file.write(data)
-            output_file.close()
-
-            if imghdr.what(train_item_dir+"/"+output_file_name) == 'jpeg' or imghdr.what(train_item_dir+"/"+output_file_name) == 'jpg':
-                print("OK")
-            else:
-                print("NOT jpg: "+image_name)
-                os.remove(train_item_dir+"/"+output_file_name)
-                print("total try: "+ str(total_try))
-                total_try = total_try + 1
-                continue
-
-
-
-            if k%3 == 0 and validation_count > 0:
+            if downloaded%train_valid_ratio == 0 and validation_count > 0:
                 output_file_valid = open(valid_item_dir+"/"+output_file_name, 'wb')
                 output_file_valid.write(data)
                 output_file_valid.close()
-                validation_count = validation_count - 1
+                print("validation image: "+output_file_name)
+            else:
+                output_file = open(train_item_dir+"/"+output_file_name, 'wb')
+                output_file.write(data)
+                output_file.close()
+                print("train image: "+output_file_name)
+
+
+            if downloaded%train_valid_ratio == 0 and validation_count > 0:
+                if imghdr.what(valid_item_dir+"/"+output_file_name) == 'jpeg' or imghdr.what(valid_item_dir+"/"+output_file_name) == 'jpg':
+                    print("OK")
+                    validation_count = validation_count - 1
+                else:
+                    print("NOT jpg: "+image_name)
+                    os.remove(valid_item_dir+"/"+output_file_name)
+                    print("total try: "+ str(total_try))
+                    total_try = total_try + 1
+                    validation_count = validation_count + 1
+                    continue
+            else:
+                if imghdr.what(train_item_dir+"/"+output_file_name) == 'jpeg' or imghdr.what(train_item_dir+"/"+output_file_name) == 'jpg':
+                    print("OK")
+                else:
+                    print("NOT jpg: "+image_name)
+                    os.remove(train_item_dir+"/"+output_file_name)
+                    print("total try: "+ str(total_try))
+                    total_try = total_try + 1
+                    continue
+
+
+
+
+
             response.close()
 
             print("completed ====> " + output_file_name)
@@ -250,7 +267,7 @@ while i < len(search_keyword):
             errorCount += 1
             print("IOError on image " + str(k + 1))
             k = k + 1
-            downloaded = downloaded + 1
+            #downloaded = downloaded + 1
             total_try = total_try + 1
 
         except HTTPError as e:  # If there is any HTTPError
@@ -258,7 +275,7 @@ while i < len(search_keyword):
             errorCount += 1
             print("HTTPError" + str(k))
             k = k + 1
-            downloaded = downloaded + 1
+            #downloaded = downloaded + 1
             total_try = total_try + 1
 
         except URLError as e:
@@ -266,7 +283,7 @@ while i < len(search_keyword):
             errorCount += 1
             print("URLError " + str(k))
             k = k + 1
-            downloaded = downloaded + 1
+            #downloaded = downloaded + 1
             total_try = total_try + 1
 
         except ssl.CertificateError as e:
@@ -274,7 +291,7 @@ while i < len(search_keyword):
             errorCount += 1
             print("CertificateError " + str(k))
             k = k + 1
-            downloaded = downloaded + 1
+            #downloaded = downloaded + 1
             total_try = total_try + 1
 
 
