@@ -4,7 +4,7 @@
 ###### Searching and Downloading Google Images to the local disk ######
 # This file downloads images from google images to local directory
 # and arrange directory suitable for machine learning.
-# directory map =               data(consist of keywords values)
+# directory map =               data(ex: keyword1keyword2...)
 #                                   |
 #                                  /\
 #                                /   \
